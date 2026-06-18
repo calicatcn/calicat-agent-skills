@@ -89,10 +89,10 @@ Meaning:
 
 When the link is ambiguous:
 
-1. parse `file_id`
-2. inspect `node-type`
-3. if still ambiguous, prefer canvas discovery before large reads
-4. do not force a layer workflow on a probable canvas link
+- Parse `file_id`.
+- Inspect `node-type`.
+- If still ambiguous, prefer canvas discovery before large reads.
+- Do not force a layer workflow on a probable canvas link.
 
 ## Core Rule
 
@@ -100,13 +100,19 @@ Prefer progressive retrieval.
 
 Large `get_design_data` payloads can easily blow up context. Start with the lightest structure endpoint that answers the next decision:
 
-1. `get_canvas_list`
-2. `get_design_page_list`
-3. `get_meta_data`
-4. `get_design_data`
-5. `get_interaction_design_data`
+- `get_canvas_list`
+- `get_design_page_list`
+- `get_meta_data`
+- `get_design_data`
+- `get_interaction_design_data`
 
 Treat this as directory first, full content later.
+
+### API Selection: get_meta_data vs. get_design_data
+
+- `get_meta_data`: Retrieves simplified page/layer structure (layer names, IDs, positions, dimensions) with the hierarchy represented in XML format. Use this to quickly inspect layer outlines, map out canvas structures, or locate specific nested elements without loading heavy style payloads.
+- `get_design_data`: Retrieves the complete layout and deep CSS/styling values. Use this to generate precise code or perform styling analysis.
+- **Direct Fetch Rule**: If the target page layer ID is already determined (e.g. from `get_design_page_list`) and your goal is frontend code implementation for that page, do not call `get_meta_data` first. Call `get_design_data` directly on the page ID.
 
 ## Minimal CLI Surface
 
@@ -166,12 +172,12 @@ Use when the user gives a design URL and asks for one layer's design or interact
 
 Workflow:
 
-1. Parse the link shape first
-2. Confirm that the link actually points to a layer, not a canvas
-3. Call `get_meta_data`
-4. Confirm the layer looks like the target
-5. Call `get_design_data`
-6. If interaction matters, call `get_interaction_design_data`
+- Parse the link shape first.
+- Confirm that the link actually points to a layer, not a canvas.
+- Call `get_meta_data`.
+- Confirm the layer looks like the target.
+- Call `get_design_data`.
+- If interaction matters, call `get_interaction_design_data`.
 
 ### Canvas-level work
 
@@ -179,12 +185,16 @@ Use when the user asks for “这个画布”, “当前画布”, or asks to pr
 
 Workflow:
 
-1. Parse the link shape first
-2. If the URL already says `node-type=canvas`, treat `node-id` as `canvas_id`
-3. Otherwise call `get_canvas_list` before guessing
-4. Call `get_design_page_list`
-5. Process one page layer at a time
-6. For each page, call `get_meta_data` before `get_design_data`
+- Parse the link shape first.
+- If the URL contains `node-id` and `node-type=canvas`, treat `node-id` as `canvas_id`.
+- If the URL does not contain `node-id` (e.g., file-only link) or `node-id` is ambiguous:
+  - Call `get_canvas_list` to fetch the list of all canvases for the file.
+  - Determine the target `canvas_id` from the list (ask the user to select, or infer based on context/defaults).
+- Call `get_design_page_list` using the resolved `canvas_id` to fetch the list of pages.
+- Process one page layer at a time.
+- For each page:
+  - If the goal is frontend code implementation, directly call `get_design_data` using the page ID (skip `get_meta_data`).
+  - Otherwise, call `get_meta_data` first if you only need to inspect page skeletal outlines or locate specific component layers before deciding what to fetch.
 
 ### Requirement card retrieval
 
@@ -192,10 +202,10 @@ Use when the user asks for requirements, PRDs, summaries, or requirement card co
 
 Workflow:
 
-1. Parse `file_id`
-2. Call `get_prd_list`
-3. Match by title or summary
-4. Call `get_prd_full_content`
+- Parse `file_id`.
+- Call `get_prd_list`.
+- Match by title or summary.
+- Call `get_prd_full_content`.
 
 Never guess `prd_id` first.
 
@@ -205,15 +215,12 @@ Use when the user asks to build frontend code for “all designs”, “all page
 
 Workflow:
 
-1. Resolve `file_id`
-2. Resolve `canvas_id`
-3. Call `get_design_page_list`
-4. Process one page layer at a time
-5. For each page:
-   - call `get_meta_data`
-   - then call `get_design_data`
-   - summarize or implement
-6. Move to the next page only after finishing the current one
+- Resolve `file_id`.
+- Resolve `canvas_id` (if the URL does not contain `node-id`, call `get_canvas_list` first to list all canvases and select the target).
+- Call `get_design_page_list` using the resolved `canvas_id` to fetch the list of pages.
+- Process one page layer at a time.
+- For each page, directly call `get_design_data` to get the complete styling details and implement/summarize the code. Skip `get_meta_data`.
+- Move to the next page only after finishing the current one.
 
 Do not fetch all page design data in a single pass.
 
@@ -241,10 +248,10 @@ If the user says:
 
 If data access fails:
 
-1. run `calicat status`
-2. if auth looks stale, run `calicat logout` then `calicat login`
-3. re-check parsed `file_id`, `canvas_id`, and `node-id`
-4. if the task depends on install/update/version state, read `references/cli-lifecycle.md`
+- Run `calicat status`.
+- If auth looks stale, run `calicat logout` then `calicat login`.
+- Re-check parsed `file_id`, `canvas_id`, and `node-id`.
+- If the task depends on install/update/version state, read `references/cli-lifecycle.md`.
 
 ## Output Style
 
