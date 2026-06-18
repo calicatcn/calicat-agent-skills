@@ -122,6 +122,22 @@ List tools:
 calicat tools-list
 ```
 
+### Windows Shell JSON Argument Escaping
+
+If the execution environment is Windows (PowerShell or CMD), passing raw JSON objects inside single quotes can lead to argument parsing issues (such as quotes being stripped). Follow these escaping rules:
+
+- **PowerShell**: Declare the JSON string in a variable, escape internal double quotes with a backslash (`\`), and pass the variable.
+  ```powershell
+  $json = '{\"file_id\":\"2045068433773035520\",\"selected_layer_id\":\"e449643f-0bc3-4b75-9fa4-9db5c0b0e402\"}'
+  calicat tools-call --name get_meta_data --args $json
+  ```
+- **CMD**: Wrap the entire arguments object in double quotes and escape internal double quotes with a backslash (`\"`).
+  ```cmd
+  calicat tools-call --name get_meta_data --args "{\"file_id\":\"2045068433773035520\",\"selected_layer_id\":\"e449643f-0bc3-4b75-9fa4-9db5c0b0e402\"}"
+  ```
+
+### CLI Command Examples (Unix-like Bash/Zsh)
+
 Canvas list:
 
 ```bash
