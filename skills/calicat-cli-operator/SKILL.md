@@ -114,6 +114,24 @@ Treat this as directory first, full content later.
 - `get_design_data`: Retrieves the complete layout and deep CSS/styling values. Use this to generate precise code or perform styling analysis.
 - **Direct Fetch Rule**: If the target page layer ID is already determined (e.g. from `get_design_page_list`) and your goal is frontend code implementation for that page, do not call `get_meta_data` first. Call `get_design_data` directly on the page ID.
 
+### Payload Storage & Context Management
+
+Large payloads from `get_design_data` can easily overwhelm the LLM's context window. Directly outputting massive JSON payloads to the terminal pollutes the context, causing slow responses, high token costs, and potential token overflow.
+
+To keep the LLM context clean and performance optimal:
+
+- **Redirect Output to File**: Always redirect large output payloads to a temporary file within the workspace (e.g., `scratch/page_design.json` or `temp_design.json`).
+  - Unix Bash/Zsh:
+    ```bash
+    calicat tools-call --name get_design_data --args '{"file_id":"123","selected_layer_id":"xyz"}' > scratch/page_design.json
+    ```
+  - PowerShell:
+    ```powershell
+    $json = '{\"file_id\":\"123\",\"selected_layer_id\":\"xyz\"}'
+    calicat tools-call --name get_design_data --args $json > scratch/page_design.json
+    ```
+- **Progressive and Targeted Reading**: Once saved, do not read the entire file into the context at once. Use standard workspace file-viewing tools with line limits (e.g., `view_file` with specific range offsets), or write a small script (e.g., Python/JS) to parse and filter the JSON down to the specific UI node details required for coding.
+
 ## Minimal CLI Surface
 
 List tools:
@@ -209,7 +227,7 @@ Workflow:
 - Call `get_design_page_list` using the resolved `canvas_id` to fetch the list of pages.
 - Process one page layer at a time.
 - For each page:
-  - If the goal is frontend code implementation, directly call `get_design_data` using the page ID (skip `get_meta_data`).
+  - If the goal is frontend code implementation, directly call `get_design_data` using the page ID (skip `get_meta_data`). Always redirect the output to a temporary JSON file to avoid polluting the prompt context.
   - Otherwise, call `get_meta_data` first if you only need to inspect page skeletal outlines or locate specific component layers before deciding what to fetch.
 
 ### Requirement card retrieval
@@ -235,7 +253,7 @@ Workflow:
 - Resolve `canvas_id` (if the URL does not contain `node-id`, call `get_canvas_list` first to list all canvases and select the target).
 - Call `get_design_page_list` using the resolved `canvas_id` to fetch the list of pages.
 - Process one page layer at a time.
-- For each page, directly call `get_design_data` to get the complete styling details and implement/summarize the code. Skip `get_meta_data`.
+- For each page, directly call `get_design_data` (always redirect the output to a temporary JSON file to avoid polluting the prompt context) to get the complete styling details, and then implement/summarize the code. Skip `get_meta_data`.
 - Move to the next page only after finishing the current one.
 
 Do not fetch all page design data in a single pass.
