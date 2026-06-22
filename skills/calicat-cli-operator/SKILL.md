@@ -130,6 +130,13 @@ To keep the LLM context clean and performance optimal:
     $json = '{\"file_id\":\"123\",\"selected_layer_id\":\"xyz\"}'
     calicat tools-call --name get_design_data --args $json > scratch/page_design.json
     ```
+- **Strict Data-Driven Implementation (No Guessing or Hallucinations)**:
+  - Do not start implementing full frontend code based on incomplete design data or placeholders. Coding must strictly correspond to the actual page design data and user requirements. Guessing leads to design-code mismatches.
+  - Implement design layouts page-by-page. A single page's `design_data` is typically small enough to not overflow the context. Alternatively, locate the target modular component/container, extract its specific node data first, and develop that segment.
+- **Handling Giant JSON Files (Splitting to Prevent Harness Truncation)**:
+  - If the output file is extremely large, do not attempt to read or display the entire file in a single turn. Reading huge files directly will trigger the agent harness truncation.
+  - Write a simple parsing script (e.g., in Python or NodeJS) to split the giant JSON file into smaller, logical files (e.g., by single component, screen section, or layout tree depth) saved under `scratch/`.
+  - Process and build code from these smaller split JSON files one by one.
 - **Progressive and Targeted Reading**: Once saved, do not read the entire file into the context at once. Use standard workspace file-viewing tools with line limits (e.g., `view_file` with specific range offsets), or write a small script (e.g., Python/JS) to parse and filter the JSON down to the specific UI node details required for coding.
 
 ## Minimal CLI Surface
